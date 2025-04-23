@@ -4,7 +4,7 @@ import {
   fireEvent,
   render,
   screen,
-  waitForElementToBeRemoved,
+  waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import { server } from "../mocks/server";
@@ -62,19 +62,25 @@ test("deletes the question when the delete button is clicked", async () => {
 
   fireEvent.click(screen.queryByText(/View Questions/));
 
+  // Wait for the question to be rendered
   await screen.findByText(/lorem testum 1/g);
 
+  // Click the delete button
   fireEvent.click(screen.queryAllByText("Delete Question")[0]);
 
-  await waitForElementToBeRemoved(() => screen.queryByText(/lorem testum 1/g));
+  // Wait for the question to be removed from the DOM
+  await waitFor(() => {
+    expect(screen.queryByText(/lorem testum 1/g)).not.toBeInTheDocument();
+  });
 
+  // Rerender the component and check that the question list is updated
   rerender(<App />);
 
+  // Check that only the remaining question is visible
   await screen.findByText(/lorem testum 2/g);
 
   expect(screen.queryByText(/lorem testum 1/g)).not.toBeInTheDocument();
 });
-
 test("updates the answer when the dropdown is changed", async () => {
   const { rerender } = render(<App />);
 
@@ -82,13 +88,19 @@ test("updates the answer when the dropdown is changed", async () => {
 
   await screen.findByText(/lorem testum 2/g);
 
+  // Change the dropdown value to "3"
   fireEvent.change(screen.queryAllByLabelText(/Correct Answer/)[0], {
     target: { value: "3" },
   });
 
-  expect(screen.queryAllByLabelText(/Correct Answer/)[0].value).toBe("3");
+  // Wait for the dropdown value to update correctly
+  await waitFor(() => {
+    expect(screen.queryAllByLabelText(/Correct Answer/)[0].value).toBe("3");
+  });
 
+  // Rerender and ensure the value persists
   rerender(<App />);
 
+  // Ensure the value is still "3" after rerendering
   expect(screen.queryAllByLabelText(/Correct Answer/)[0].value).toBe("3");
 });
